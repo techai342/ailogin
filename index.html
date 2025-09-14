@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>TECH. AI — Login</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Orbitron:wght@600;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#0a0314;
+      --neon1:#00ffe0;
+      --neon2:#ff008c;
+      --neon3:#6a5dff;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      font-family:Poppins,Arial,sans-serif;
+      background:var(--bg);
+      color:#f2faff;
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+    }
+
+    canvas#bg{
+      position:fixed;
+      top:0;left:0;
+      width:100%;height:100%;
+      z-index:0;
+      pointer-events:none;
+    }
+
+    .login-box{
+      position:relative;
+      z-index:5;
+      background:rgba(255,255,255,0.05);
+      border:1px solid rgba(255,255,255,0.08);
+      border-radius:16px;
+      padding:36px 28px;
+      width:320px;
+      max-width:92%;
+      box-shadow:0 0 35px rgba(0,0,0,0.7);
+      backdrop-filter:blur(8px);
+      text-align:center;
+      animation: fadeIn 1s ease;
+    }
+    .login-box h1{
+      font-family:Orbitron,sans-serif;
+      font-size:22px;
+      font-weight:800;
+      margin-bottom:16px;
+      background:linear-gradient(90deg,var(--neon1),var(--neon2),var(--neon3));
+      -webkit-background-clip:text;
+      color:transparent;
+    }
+    .login-box p{
+      font-size:13px;
+      color:rgba(220,240,255,0.85);
+      margin-bottom:18px;
+    }
+    
+    .form-group {
+      margin-bottom: 14px;
+      text-align: left;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 13px;
+      color: rgba(220,240,255,0.85);
+    }
+
+    .login-box input{
+      width:100%;
+      padding:12px 14px;
+      border-radius:10px;
+      border:1px solid rgba(255,255,255,0.15);
+      background:rgba(255,255,255,0.07);
+      color:#fff;
+      font-size:14px;
+      outline:none;
+      transition:border .2s, box-shadow .2s;
+    }
+    .login-box input:focus{
+      border-color:var(--neon1);
+      box-shadow:0 0 12px rgba(0,255,224,0.3);
+    }
+
+    .login-box button{
+      width:100%;
+      padding:12px;
+      border:none;
+      border-radius:10px;
+      font-family:Orbitron,sans-serif;
+      font-size:15px;
+      font-weight:700;
+      cursor:pointer;
+      background:linear-gradient(90deg,var(--neon1),var(--neon2));
+      color:#021217;
+      transition:transform .2s, box-shadow .2s;
+      position: relative;
+    }
+    .login-box button:hover:not(:disabled){
+      transform:translateY(-2px);
+      box-shadow:0 0 22px rgba(0,255,224,0.3);
+    }
+    
+    .login-box button:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+    
+    .button-loading .button-text {
+      visibility: hidden;
+      opacity: 0;
+    }
+    
+    .button-loading::after {
+      content: "";
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      margin: auto;
+      border: 3px solid transparent;
+      border-top-color: #021217;
+      border-radius: 50%;
+      animation: button-loading-spinner 1s ease infinite;
+    }
+    
+    @keyframes button-loading-spinner {
+      from {
+        transform: rotate(0turn);
+      }
+      to {
+        transform: rotate(1turn);
+      }
+    }
+
+    .error{
+      color:#ff5f8c;
+      font-size:13px;
+      margin-top:8px;
+      display:none;
+    }
+
+    @keyframes fadeIn{
+      from{opacity:0;transform:translateY(20px)}
+      to{opacity:1;transform:translateY(0)}
+    }
+    @keyframes shake{
+      0%,100%{transform:translateX(0)}
+      20%,60%{transform:translateX(-10px)}
+      40%,80%{transform:translateX(10px)}
+    }
+  </style>
+</head>
+<body>
+  <canvas id="bg"></canvas>
+
+  <div class="login-box" id="loginBox">
+    <h1>TECH. AI Login</h1>
+    <p>Please enter username & password to unlock website</p>
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" placeholder="Username" required>
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" placeholder="Password" required>
+      </div>
+      <button type="submit" id="loginBtn">
+        <span class="button-text">Unlock</span>
+      </button>
+    </form>
+    <div class="error" id="errorMsg">Incorrect username or password!</div>
+  </div>
+
+  <script>
+    // background animation: neon particle network
+    const c = document.getElementById('bg');
+    const ctx = c.getContext('2d');
+    let w, h, nodes = [];
+    let animationId = null;
+
+    function resize() {
+      w = c.width = window.innerWidth;
+      h = c.height = window.innerHeight;
+      initNodes();
+    }
+    window.addEventListener('resize', resize);
+
+    function rand(a, b) { return Math.random() * (b - a) + a; }
+    
+    function initNodes() {
+      nodes = [];
+      for(let i = 0; i < 60; i++) {
+        nodes.push({x: rand(0, w), y: rand(0, h), vx: rand(-0.3, 0.3), vy: rand(-0.3, 0.3)});
+      }
+    }
+    
+    function draw() {
+      ctx.fillStyle = "#0a0314";
+      ctx.fillRect(0, 0, w, h);
+      
+      for(let i = 0; i < nodes.length; i++) {
+        for(let j = i + 1; j < nodes.length; j++) {
+          const dx = nodes[i].x - nodes[j].x;
+          const dy = nodes[i].y - nodes[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          
+          if(dist < 140) {
+            ctx.strokeStyle = `rgba(0,255,224,${1-dist/140})`;
+            ctx.lineWidth = 0.4;
+            ctx.beginPath();
+            ctx.moveTo(nodes[i].x, nodes[i].y);
+            ctx.lineTo(nodes[j].x, nodes[j].y);
+            ctx.stroke();
+          }
+        }
+      }
+      
+      for(let node of nodes) {
+        ctx.fillStyle = "#00ffe0";
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, 2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        node.x += node.vx;
+        node.y += node.vy;
+        
+        if(node.x < 0 || node.x > w) node.vx *= -1;
+        if(node.y < 0 || node.y > h) node.vy *= -1;
+      }
+      
+      animationId = requestAnimationFrame(draw);
+    }
+    
+    function startAnimation() {
+      if (!animationId) {
+        resize();
+        draw();
+      }
+    }
+    
+    function stopAnimation() {
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+        animationId = null;
+      }
+    }
+    
+    // Start animation initially
+    startAnimation();
+
+    // login functionality
+    const loginForm = document.getElementById('loginForm');
+    const loginBtn = document.getElementById('loginBtn');
+    const loginBox = document.getElementById('loginBox');
+    const errorMsg = document.getElementById('errorMsg');
+    
+    // Login function with correct credentials
+    async function checkLogin(event) {
+      event.preventDefault();
+      
+      const u = document.getElementById('username').value.trim();
+      const p = document.getElementById('password').value.trim();
+      
+      // Show loading state
+      loginBtn.disabled = true;
+      loginBtn.classList.add('button-loading');
+      errorMsg.style.display = 'none';
+      
+      // Simulate network request
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Check credentials (username: Muhammad SAQIB, password: 345678)
+      if(u === 'Muhammad SAQIB' && p === '345678') {
+        // Stop animation to save resources
+        stopAnimation();
+        window.location.href = 'https://www.psdly.to/';
+      } else {
+        errorMsg.style.display = 'block';
+        loginBox.style.animation = 'shake 0.4s';
+        setTimeout(() => { loginBox.style.animation = ''; }, 400);
+      }
+      
+      // Remove loading state
+      loginBtn.disabled = false;
+      loginBtn.classList.remove('button-loading');
+    }
+
+    loginForm.addEventListener('submit', checkLogin);
+    
+    // Pause animation when tab is not visible to save resources
+    document.addEventListener('visibilitychange', function() {
+      if (document.hidden) {
+        stopAnimation();
+      } else {
+        startAnimation();
+      }
+    });
+  </script>
+</body>
+</html>
